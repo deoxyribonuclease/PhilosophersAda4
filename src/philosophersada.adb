@@ -3,7 +3,7 @@ with GNAT.Semaphores; use GNAT.Semaphores;
 
 procedure Philosophersada is
    Count : constant Integer := 5;
-   Room_Size : constant Integer := 2;
+   Room_Size : constant Integer := 4;
    type Fork is record
       Id : Integer;
       Lock : Counting_Semaphore (1, Default_Ceiling);

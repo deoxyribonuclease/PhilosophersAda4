@@ -10,114 +10,131 @@ procedure Philosophersada is
    end record;
    type Fork_Array is array (1 .. Count) of Fork;
    Forks : Fork_Array;
+
    Room_Semaphore : Counting_Semaphore (Room_Size, Default_Ceiling);
 
    ------------------------------------------------------------------------------------------
 
    task type PhilosopherLastChangeHand is
-      entry Identify (Id : Integer; Left, Right : Integer);
+      entry Identify (Id : Integer; Left, Right : Fork; Count : Integer);
    end PhilosopherLastChangeHand;
 
    task body PhilosopherLastChangeHand is
-      My_Id, My_Left, My_Right : Integer;
+      My_Id, Eat_Count, Has_Eaten : Integer;
+      My_Left, My_Right : Fork;
    begin
-      accept Identify (Id : Integer; Left, Right : Integer) do
+      accept Identify (Id : Integer; Left, Right : Fork; Count : Integer) do
          My_Id := Id;
-         My_Left := Left;
-         My_Right := Right;
+      if My_Left.Id < My_Right.Id then
+         My_Left.Id := Left.Id;
+            My_Right.Id := Right.Id;
+      else
+           My_Left.Id := Right.Id;
+            My_Right.Id := Left.Id;
+      end if;
+         Eat_Count := Count;
+         Has_Eaten := 0;
       end Identify;
 
-      for I in 1 .. Count loop
+      loop
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " is trying to pick up forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
-         if  My_Left < My_Right then
-            Forks (My_Left).Lock.Seize;
-            Forks (My_Right).Lock.Seize;
-         else
-            Forks (My_Right).Lock.Seize;
-            Forks (My_Left).Lock.Seize;
-         end if;
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
+         My_Left.Lock.Seize;
+         My_Right.Lock.Seize;
+         Has_Eaten := Has_Eaten + 1;
          Put_Line ("Philosopher " & Integer'Image (My_Id) & " is eating");
-         Forks (My_Left).Lock.Release;
-         Forks (My_Right).Lock.Release;
+         My_Left.Lock.Release;
+         My_Right.Lock.Release;
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " puts down forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
+         exit when Has_Eaten = Eat_Count;
       end loop;
    end PhilosopherLastChangeHand;
+
 
    ------------------------------------------------------------------------------------------
 
     task type PhilosopherAsymmetric is
-      entry Identify (Id : Integer; Left, Right : Integer);
+      entry Identify (Id : Integer; Left, Right : Fork; Count : Integer);
    end PhilosopherAsymmetric;
 
    task body PhilosopherAsymmetric is
-      My_Id, My_Left, My_Right : Integer;
+      My_Id, Eat_Count, Has_Eaten : Integer;
+      My_Left, My_Right : Fork;
    begin
-      accept Identify (Id : Integer; Left, Right : Integer) do
-         My_Id := Id;
-         My_Left := Left;
-         My_Right := Right;
+        accept Identify (Id : Integer; Left, Right : Fork; Count : Integer) do
+          My_Id := Id;
+      if My_Id mod 2 = 0 then
+        My_Left.Id := Left.Id;
+            My_Right.Id := Right.Id;
+      else
+           My_Left.Id := Right.Id;
+            My_Right.Id := Left.Id;
+      end if;
+         Eat_Count := Count;
+         Has_Eaten := 0;
       end Identify;
 
-      for I in 1 .. Count loop
+      loop
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " is trying to pick up forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
-         if My_Id mod 2 = 0 then
-            Forks (My_Left).Lock.Seize;
-            Forks (My_Right).Lock.Seize;
-         else
-            Forks (My_Right).Lock.Seize;
-            Forks (My_Left).Lock.Seize;
-         end if;
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
+          My_Left.Lock.Seize;
+         My_Right.Lock.Seize;
+          Has_Eaten := 1+Has_Eaten;
          Put_Line ("Philosopher " & Integer'Image (My_Id) & " is eating");
-         Forks (My_Left).Lock.Release;
-         Forks (My_Right).Lock.Release;
+          My_Left.Lock.Release;
+         My_Right.Lock.Release;
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " puts down forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
-      end loop;
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
+            exit when Has_Eaten = Count;
+             end loop;
    end PhilosopherAsymmetric;
 
    ------------------------------------------------------------------------------------------
 
    task type PhilosopherRoom is
-      entry Identify (Id : Integer; Left, Right : Integer);
+      entry Identify (Id : Integer; Left, Right : Fork; Count : Integer);
    end PhilosopherRoom;
 
    task body PhilosopherRoom is
-      My_Id, My_Left, My_Right : Integer;
+       My_Id, Eat_Count, Has_Eaten : Integer;
+      My_Left, My_Right : Fork;
    begin
-      accept Identify (Id : Integer; Left, Right : Integer) do
+      accept Identify (Id : Integer; Left, Right : Fork; Count : Integer) do
          My_Id := Id;
-         My_Left := Left;
-         My_Right := Right;
+         My_Left.Id := Left.Id;
+         My_Right.Id := Right.Id;
+         Eat_Count := Count;
+         Has_Eaten := 0;
       end Identify;
 
-      for I in 1 .. Count loop
+      loop
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " is trying to pick up forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
          Room_Semaphore.Seize;
-         Forks (My_Left).Lock.Seize;
-         Forks (My_Right).Lock.Seize;
+         My_Left.Lock.Seize;
+         My_Right.Lock.Seize;
+          Has_Eaten := 1+Has_Eaten;
          Put_Line ("Philosopher " & Integer'Image (My_Id) & " is eating");
-         Forks (My_Left).Lock.Release;
-         Forks (My_Right).Lock.Release;
+         My_Left.Lock.Release;
+         My_Right.Lock.Release;
          Room_Semaphore.Release;
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " puts down forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
-      end loop;
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
+               exit when Has_Eaten = Count;
+                end loop;
    end PhilosopherRoom;
 
    ------------------------------------------------------------------------------------------
@@ -147,16 +164,18 @@ procedure Philosophersada is
    end Token;
 
    task type PhilosopherToken is
-      entry Identify (Id : Integer; Left, Right : Integer);
+      entry Identify (Id : Integer; Left, Right : Fork; Count : Integer);
    end PhilosopherToken;
 
    task body PhilosopherToken is
-      My_Id, My_Left, My_Right,Has_Eaten : Integer;
+      My_Id, Eat_Count, Has_Eaten : Integer;
+      My_Left, My_Right : Fork;
    begin
-      accept Identify (Id : Integer; Left, Right : Integer) do
+      accept Identify (Id : Integer; Left, Right : Fork; Count : Integer) do
          My_Id := Id;
-         My_Left := Left;
-         My_Right := Right;
+         My_Left.Id := Left.Id;
+         My_Right.Id := Right.Id;
+          Eat_Count := Count;
          Has_Eaten := 0;
       end Identify;
 
@@ -164,19 +183,19 @@ procedure Philosophersada is
          if Token.Get_Token = My_Id then
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " is trying to pick up forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
-         Forks (My_Left).Lock.Seize;
-         Forks (My_Right).Lock.Seize;
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
+          My_Left.Lock.Seize;
+         My_Right.Lock.Seize;
          Put_Line ("Philosopher " & Integer'Image (My_Id) & " is eating");
          Has_Eaten := Has_Eaten+1;
          Token.Set_Token((My_Id+2) mod Count+1);
-         Forks (My_Left).Lock.Release;
-         Forks (My_Right).Lock.Release;
+         My_Left.Lock.Release;
+         My_Right.Lock.Release;
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " puts down forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
             end if;
          exit when Has_Eaten = Count;
          end loop;
@@ -215,40 +234,45 @@ procedure Philosophersada is
    ForksCanTake : array (1 .. Count) of ForkSemaphore (1);
 
    task type PhilosopherSeenWant is
-      entry Identify (Id : Integer; Left, Right : Integer);
+      entry Identify (Id : Integer; Left, Right : Fork; Count : Integer);
    end PhilosopherSeenWant;
 
    task body PhilosopherSeenWant is
-      My_Id, My_Left, My_Right : Integer;
+      My_Id, Eat_Count, Has_Eaten : Integer;
+      My_Left, My_Right : Fork;
    begin
-      accept Identify (Id : Integer; Left, Right : Integer) do
+      accept Identify (Id : Integer; Left, Right : Fork; Count : Integer) do
          My_Id := Id;
-         My_Left := Left;
-         My_Right := Right;
+         My_Left.Id := Left.Id;
+         My_Right.Id := Right.Id;
+         Eat_Count := Count;
+         Has_Eaten := 0;
       end Identify;
-      for I in 1 .. Count loop
+      loop
          Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " is trying to pick up forks " &
-                     Integer'Image (My_Left) & " and " &
-                     Integer'Image (My_Right));
-         if ForksCanTake (My_Left).Count > 0 then
-            ForksCanTake (My_Left).Seize;
-            if ForksCanTake (My_Right).Count > 0 then
-               ForksCanTake (My_Right).Seize;
+                     Integer'Image (My_Left.Id) & " and " &
+                     Integer'Image (My_Right.Id));
+         if ForksCanTake (My_Left.Id).Count > 0 then
+            ForksCanTake (My_Left.Id).Seize;
+            if ForksCanTake (My_Right.Id).Count > 0 then
+               ForksCanTake (My_Right.Id).Seize;
                Put_Line ("Philosopher " & Integer'Image (My_Id) & " is eating");
-               ForksCanTake (My_Left).Release;
-               ForksCanTake (My_Right).Release;
+               ForksCanTake (My_Left.Id).Release;
+               ForksCanTake (My_Right.Id).Release;
+                Has_Eaten := 1+Has_Eaten;
                Put_Line ("Philosopher " & Integer'Image (My_Id) &
                      " puts down forks " &
-               Integer'Image (My_Left) & " and " &
-               Integer'Image (My_Right));
+               Integer'Image (My_Left.Id) & " and " &
+               Integer'Image (My_Right.Id));
             else
-               ForksCanTake (My_Left).Release;
+               ForksCanTake (My_Left.Id).Release;
                Put_Line ("Philosopher " & Integer'Image (My_Id) &
-                     " puts down left fork " & Integer'Image (My_Left));
+                     " puts down left fork " & Integer'Image (My_Left.Id));
             end if;
          end if;
-      end loop;
+                  exit when Has_Eaten = Count;
+                   end loop;
    end PhilosopherSeenWant;
 
   ------------------------------------------------------------------------------------------
@@ -257,15 +281,14 @@ procedure Philosophersada is
   -- Philosophers : array (1 .. Count) of PhilosopherAsymmetric;
   -- Philosophers : array (1 .. Count) of PhilosopherRoom;
   -- Philosophers : array (1 .. Count) of PhilosopherToken;
-   Philosophers : array (1 .. Count) of PhilosopherSeenWant;
+  -- Philosophers : array (1 .. Count) of PhilosopherSeenWant;
 
 
 begin
-   for I in Forks'Range loop
-      Forks (I).Id := I;
+for I in Forks'Range loop
+      Forks(I).Id := I;
    end loop;
-
-   for I in Philosophers'Range loop
-      Philosophers (I).Identify (I, I, (I mod Count) + 1);
+   for I in 1 .. Count loop
+         Philosophers(I).Identify (I, Forks(I), Forks((I mod Count)+1), Count);
    end loop;
 end Philosophersada;

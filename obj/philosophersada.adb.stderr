@@ -1,0 +1,2 @@
+philosophersada.adb:28:10: warning: "My_Left.Id" may be referenced before it has a value [enabled by default]
+philosophersada.adb:28:23: warning: "My_Right.Id" may be referenced before it has a value [enabled by default]
